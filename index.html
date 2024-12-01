@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html lang="en">
+<!-- Also at https://claude.site/artifacts/b3851ca6-cdc5-474c-ab4f-93a62f1574fa-->
+<head>
+    <meta charset="UTF-8">
+    <title>Sorry! Card Deck Simulator</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            background-color: #f0f0f0;
+        }
+        #card-display {
+            width: 250px;
+            height: 350px;
+            border: 2px solid black;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            font-size: 48px;
+            margin-bottom: 20px;
+            background-color: white;
+            position: relative;
+        }
+        #card-display.empty {
+            background-color: #e0e0e0;
+            color: #888;
+        }
+        #player-info {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            font-size: 24px;
+            font-weight: bold;
+        }
+        button {
+            padding: 10px 20px;
+            font-size: 16px;
+            margin: 10px;
+            cursor: pointer;
+        }
+        #deck-count {
+            margin-bottom: 10px;
+            font-weight: bold;
+        }
+        #players-input {
+            margin-bottom: 20px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <h1>Sorry! Card Deck Simulator</h1>
+    <div id="players-input">
+        <label for="num-players">Number of Players:</label>
+        <input type="number" id="num-players" min="2" max="4" value="4">
+    </div>
+    <div id="deck-count">Cards Remaining: 44</div>
+    <div id="card-display">
+        <div id="player-info">P1</div>
+        Deck Ready
+    </div>
+    <div>
+        <button id="draw-btn">Draw Card</button>
+        <button id="reshuffle-btn" style="display: none;">Reshuffle Deck</button>
+    </div>
+
+    <script>
+        class SorryDeck {
+            constructor() {
+                this.cards = [];
+                this.createDeck();
+                this.shuffle();
+            }
+
+            createDeck() {
+                const cardValues = [1, 2, 3, 4, 5, 7, 8, 10, 11, 12, 'SORRY'];
+                cardValues.forEach(value => {
+                    for (let i = 0; i < 4; i++) {
+                        this.cards.push(value);
+                    }
+                });
+            }
+
+            shuffle() {
+                for (let i = this.cards.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [this.cards[i], this.cards[j]] = [this.cards[j], this.cards[i]];
+                }
+            }
+
+            drawCard() {
+                return this.cards.pop();
+            }
+
+            isEmpty() {
+                return this.cards.length === 0;
+            }
+
+            getDeckCount() {
+                return this.cards.length;
+            }
+        }
+
+        // Utility function to generate a random pastel color
+        function getRandomPastelColor() {
+            const hue = Math.floor(Math.random() * 360);
+            return `hsl(${hue}, 70%, 80%)`;
+        }
+
+        // Initialize game elements
+        const cardDisplay = document.getElementById('card-display');
+        const playerInfo = document.getElementById('player-info');
+        const drawBtn = document.getElementById('draw-btn');
+        const reshuffleBtn = document.getElementById('reshuffle-btn');
+        const deckCountDisplay = document.getElementById('deck-count');
+        const numPlayersInput = document.getElementById('num-players');
+
+        // Game state variables
+        let currentPlayer = 1;
+        let numPlayers = 4;
+        let lastDrawnCard = null;
+
+        // Update number of players
+        numPlayersInput.addEventListener('change', (e) => {
+            numPlayers = parseInt(e.target.value);
+            // Ensure current player is within new player count
+            currentPlayer = Math.min(currentPlayer, numPlayers);
+            playerInfo.textContent = `P${currentPlayer}`;
+        });
+
+        // Create deck
+        let deck = new SorryDeck();
+
+        // Draw card event listener
+        drawBtn.addEventListener('click', () => {
+            // If this is the last card
+            if (deck.getDeckCount() === 1) {
+                const drawnCard = deck.drawCard();
+                
+                // Set random background color
+                const cardColor = getRandomPastelColor();
+                cardDisplay.style.backgroundColor = cardColor;
+                
+                // Update card display with card value
+                cardDisplay.innerHTML = `
+                    <div id="player-info">P${currentPlayer}</div>
+                    ${drawnCard}
+                `;
+                cardDisplay.classList.remove('empty');
+                
+                deckCountDisplay.textContent = 'Cards Remaining: 0';
+                
+                // Prepare for reshuffle
+                drawBtn.style.display = 'none';
+                reshuffleBtn.style.display = 'inline-block';
+
+                // Prepare next player turn (do not reset to first player)
+                currentPlayer = currentPlayer % numPlayers + 1;
+                return;
+            }
+
+            // If deck is already empty
+            if (deck.isEmpty()) {
+                drawBtn.style.display = 'none';
+                reshuffleBtn.style.display = 'inline-block';
+                cardDisplay.textContent = 'Deck Empty';
+                cardDisplay.classList.add('empty');
+                deckCountDisplay.textContent = 'Cards Remaining: 0';
+                return;
+            }
+
+            const drawnCard = deck.drawCard();
+            
+            // Set random background color
+            const cardColor = getRandomPastelColor();
+            cardDisplay.style.backgroundColor = cardColor;
+            
+            // Update card display with card value
+            cardDisplay.innerHTML = `
+                <div id="player-info">P${currentPlayer}</div>
+                ${drawnCard}
+            `;
+            cardDisplay.classList.remove('empty');
+            
+            const remainingCards = deck.getDeckCount();
+            deckCountDisplay.textContent = `Cards Remaining: ${remainingCards}`;
+
+            // Player turn logic
+            if (drawnCard !== 2) {
+                // Increment player for most cards
+                currentPlayer = currentPlayer % numPlayers + 1;
+            }
+            playerInfo.textContent = `P${currentPlayer}`;
+        });
+
+        // Reshuffle event listener
+        reshuffleBtn.addEventListener('click', () => {
+            deck = new SorryDeck();
+            drawBtn.style.display = 'inline-block';
+            reshuffleBtn.style.display = 'none';
+            
+            playerInfo.textContent = `P${currentPlayer}`;
+            
+            cardDisplay.textContent = 'Deck Ready';
+            cardDisplay.style.backgroundColor = 'white';
+            cardDisplay.classList.remove('empty');
+            deckCountDisplay.textContent = `Cards Remaining: ${deck.getDeckCount()}`;
+        });
+    </script>
+</body>
+</html>
